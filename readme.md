@@ -2,7 +2,7 @@
 
 # Bard
 
-#### Nim interface of Google Bard free API<br></small><font size="1">(ps: with cli :D)</font>
+#### Nim interface of Google Bard free API<br><font size="1">(ps: with cli :D)</font>
 
 **[About](#about) - [Usage](#usage)** - [License](#license)
 
