@@ -2,7 +2,7 @@
 
 version       = "0.1.0"
 author        = "Thiago Navarro"
-description   = "Nim interface of Google Bart free API"
+description   = "Nim interface of Google Bard free API"
 license       = "MIT"
 srcDir        = "src"
 
