@@ -3,8 +3,9 @@ from std/httpclient import newAsyncHttpClient, newHttpHeaders, postContent, clos
                             HttpHeaders, getContent
 from std/strformat import fmt
 from std/strutils import split
-from std/json import `$`, `%*`, newJNull, parseJson, `{}`, len, getStr
-from std/uri import initUri, `$`, encodeQuery
+from std/json import `$`, `%*`, newJNull, parseJson, `{}`, len, getStr, JsonNode,
+                      items, JNull
+from std/uri import `$`, encodeQuery, Uri
 
 from pkg/util/forStr import between
 
@@ -17,14 +18,27 @@ type
     headers: HttpHeaders
     snlm0e: string
     reqId: int
-  AiChat* = ref object
+  BardAiChat* = ref object
     ai: BardAi
     conversationId: string
     responseId: string
     choiceId: string
+  BardAiResponse* = ref object
+    text*: string
+    images*: seq[BardAiImage]
+  BardAiImage* = ref object
+    tag*: string
+    url*: string
+    source*: BardAiImageSource
+  BardAiImageSource* = ref object
+    original*: string
+    website*: string
+    name*: string
+    favicon*: string
 
 using
   self: BardAi
+  chat: BardAiChat
 
 proc getSNlM0e(self) {.async.} =
   ## Gets the `SNlM0e` value from Google Bard webpage
@@ -55,30 +69,18 @@ proc newBardAi*(psid, psidts: string): Future[BardAi] {.async.} =
   result.reqId = nextReqId result
   await result.getSNlM0e
   
-proc newChat*(psid, psidts: string): Future[AiChat] {.async.} =
-  ## Creates new Bard AI object
+proc newBardAiChat*(self): BardAiChat =
+  ## Creates new Bard AI Chat object
   new result
-  result.ai = await newBardAi(psid, psidts)
+  result.ai = self
 
 # internal getters
-template headers(chat: AiChat): BardAi.headers = chat.ai.headers
-template reqId(chat: AiChat): BardAi.reqId = chat.ai.reqId
-template snlm0e(chat: AiChat): BardAi.snlm0e = chat.ai.snlm0e
+template headers(chat): BardAi.headers = chat.ai.headers
+template reqId(chat): BardAi.reqId = chat.ai.reqId
+template snlm0e(chat): BardAi.snlm0e = chat.ai.snlm0e
 
-proc prompt(self: BardAi or AiChat; text: string): Future[string] {.async.} =
-  ## Make a text prompt to Google Bard
-  var client = newAsyncHttpClient(headers = self.headers)
-
-  var url = initUri()
-  url.path = "/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate"
-  url.hostname = hostUrl
-  url.scheme = "https"
-  url.query = encodeQuery({
-    "bl": "boq_assistant-bard-web-server_20230711.08_p0",
-    "_reqID": $self.reqId,
-    "rt": "c",
-  })
-
+proc buildQuery(self: BardAi or var BardAiChat; prompt: string): string =
+  ## Creates the Bard's batchexecute query body
   when self is BardAi:
     let ids = newJNull()
   else:
@@ -87,29 +89,74 @@ proc prompt(self: BardAi or AiChat; text: string): Future[string] {.async.} =
       self.responseID,
       self.choiceID
     ]
-  let
-    resp = await client.postContent(url, {
-      "f.req": $ %*[
+  result = encodeQuery {
+    "f.req": $ %*[
+      newJNull(),
+      $ %*[
+        %*[prompt],
         newJNull(),
-        $ %*[
-          %*[text],
-          newJNull(),
-          ids
-        ]
-      ],
-      "at": self.snlm0e
-    }.encodeQuery)
-    json = resp.split("\n")[3].parseJson{0}{2}
+        ids
+      ]
+    ],
+    "at": self.snlm0e
+  }
 
+proc buildUrl(self: BardAi or var BardAiChat): Uri =
+  ## Creates the Bard's batchexecute URL
+  result.path = "/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate"
+  result.hostname = hostUrl
+  result.scheme = "https"
+  result.query = encodeQuery({
+    "bl": "boq_assistant-bard-web-server_20230711.08_p0",
+    "_reqID": $self.reqId,
+  })
+
+proc getRespJson(resp: string): JsonNode =
+  let json = resp.split("\n")[2].parseJson{0}{2}
   if json.isNil:
-    raise newException(Exception, fmt"Google Bard sent an unrecognizable response: `{resp}`")
-  let bardResponse = json.getStr.parseJson{4, 0}
+    raise newException(Exception,
+      fmt"Google Bard sent an unrecognizable response: `{resp}`")
+  result = json.getStr.parseJson
 
-  result = bardResponse{1, 0}.getStr
+proc extractImages(node: JsonNode): seq[BardAiImage] =
+  ## Extracts all images of JSON Bard response
+  if node.kind != JNull:
+    for imgNode in node:
+      var img = new BardAiImage
+      img.tag = imgNode{2}.getStr
+      img.url = imgNode{3, 0, 0}.getStr
+      img.source.original = imgNode{0, 0, 0}.getStr
+      img.source.website = imgNode{1, 0, 0}.getStr
+      img.source.name = imgNode{1, 1}.getStr
+      img.source.favicon = imgNode{1, 3}.getStr
+      result.add img
+
+proc prompt(self: BardAi or var BardAiChat; text: string): Future[BardAiResponse] {.async.} =
+  ## Make a text prompt to Google Bard
+  var client = newAsyncHttpClient(headers = self.headers)
+  let
+    resp = getRespJson await client.postContent(
+      self.buildUrl,
+      self.buildQuery text
+    )
+    bardData = resp{4, 0}
+  new result
+  result.text = bardData{1, 0}.getStr
+  result.images = extractImages bardData{4}
+
+  when self is BardAiChat:
+    self.conversationId = resp{1}{0}.getStr
+    self.responseId = resp{1}{1}.getStr
+    self.choiceId = resp{4}{0}{0}.getStr
 
 when isMainModule:
   let ai = waitFor newBardAi(
     psid = "",
     psidts = "" 
   )
-  echo waitFor ai.prompt "Tell me an Asian traditional history in ten words"
+  echo ai.snlm0e
+  var chat = ai.newBardAiChat
+  # echo waitFor ai.prompt "Tell me an Asian traditional history in ten words"
+  echo waitFor(chat.prompt "my name is jeff")[]
+  echo waitFor(chat.prompt "What's my name?")[]
+  
