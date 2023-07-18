@@ -2,7 +2,7 @@
 
 # Bard
 
-#### Nim interface of Google Bard free API<!--<br><small>(ps: with cli :D)</small>-->
+####  Nim interface for Google Bard batchexecute API <!--<br><small>(ps: with cli :D)</small>-->
 
 **[About](#about) - [Usage](#usage)** - [License](#license)
 
