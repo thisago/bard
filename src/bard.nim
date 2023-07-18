@@ -2,8 +2,9 @@ import std/asyncdispatch
 from std/httpclient import newAsyncHttpClient, newHttpHeaders, postContent, close,
                             HttpHeaders, getContent
 from std/strformat import fmt
-from std/json import `$`, `%*`, newJNull
-import std/uri
+from std/strutils import split
+from std/json import `$`, `%*`, newJNull, parseJson, `{}`, len, getStr
+from std/uri import initUri, `$`, encodeQuery
 
 from pkg/util/forStr import between
 
@@ -86,28 +87,25 @@ proc prompt(self: BardAi or AiChat; text: string): Future[string] {.async.} =
       self.responseID,
       self.choiceID
     ]
-  echo url, "data: ", {
-    "f.req": $ %*[
-      newJNull(),
-      $ %*[
-        %*[text],
+  let
+    resp = await client.postContent(url, {
+      "f.req": $ %*[
         newJNull(),
-        ids
-      ]
-    ],
-    "at": self.snlm0e
-  }.encodeQuery
-  echo await client.postContent(url, {
-    "f.req": $ %*[
-      newJNull(),
-      $ %*[
-        %*[text],
-        newJNull(),
-        ids
-      ]
-    ],
-    "at": self.snlm0e
-  }.encodeQuery)
+        $ %*[
+          %*[text],
+          newJNull(),
+          ids
+        ]
+      ],
+      "at": self.snlm0e
+    }.encodeQuery)
+    json = resp.split("\n")[3].parseJson{0}{2}
+
+  if json.isNil:
+    raise newException(Exception, fmt"Google Bard sent an unrecognizable response: `{resp}`")
+  let bardResponse = json.getStr.parseJson{4, 0}
+
+  result = bardResponse{1, 0}.getStr
 
 when isMainModule:
   let ai = waitFor newBardAi(
