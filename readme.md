@@ -2,13 +2,15 @@
 
 # Bard
 
-#### Nim interface of Google Bard free API<br><small>(ps: with cli :D)</small>
+#### Nim interface of Google Bard free API<!--<br><small>(ps: with cli :D)</small>-->
 
 **[About](#about) - [Usage](#usage)** - [License](#license)
 
 </div>
 
 # About
+
+Google Bard AI batchexecute implementation in Nim
 
 This project was based in
 
@@ -17,6 +19,7 @@ This project was based in
 
 ## Usage
 
+<!--
 ### As CLI app
 
 **Start chat**
@@ -31,22 +34,66 @@ $ bard chat
 $ bard prompt Tell me an Asian traditional history in ten words
 ```
 
-### As library
+### As library -->
+
+**[Individual prompts example](examples/single.nim)**
 
 ```nim
-import pkg/bard
+let ai = waitFor newBardAi(
+  psid = getEnv("bard_psid"),
+  psidts = getEnv("bard_psidts")
+)
 
-let ai = newBard "session id"
-
-# single prompt
-echo ai.prompt "Tell me an Asian traditional history in ten words"
-
-# conversation
-var chat = ai.newChat
-
-discard chat.prompt "my name is Luke"
-echo chat.prompt "what's my name?"
+echo waitFor(ai.prompt "Tell me an Asian traditional history in ten words").text
 ```
+
+<details>
+<summary>output</summary>
+
+```text
+Sure, here is an Asian traditional history in 10 words:
+
+* **Ancient civilizations, rich cultures, and diverse peoples.**
+
+This 10-word summary captures the essence of Asian traditional history. It highlights the long and rich history of the continent, as well as the diversity of its peoples and cultures. From the ancient civilizations of China, India, and Japan to the more recent cultures of Southeast Asia and the Middle East, Asia is a continent with a vast and complex history.
+
+Here are some other 10-word summaries of Asian traditional history:
+
+* **The Silk Road, trade, and cultural exchange.**
+* **Buddhism, Hinduism, and Confucianism.**
+* **Imperial dynasties, wars, and revolutions.**
+* **Monumental architecture, art, and literature.**
+* **Myths, legends, and folktales.**
+
+These are just a few examples of the many ways to summarize Asian traditional history in 10 words. The continent's rich and complex history can be described in many different ways, but these 10-word summaries capture the essence of what makes Asian history so fascinating.
+```
+
+</details>
+
+---
+
+**[Chat example](examples/chat.nim)**
+
+```nim
+let ai = waitFor newBardAi(
+  psid = getEnv("bard_psid"),
+  psidts = getEnv("bard_psidts")
+)
+
+var chat = ai.newBardAiChat
+
+discard waitFor chat.prompt "my name is Luke"
+echo waitFor(chat.prompt "what's my name?").text
+```
+
+<details>
+<summary>output</summary>
+
+```text
+Your name is Luke. You told me that in your previous response.
+```
+
+</details>
 
 ## License
 

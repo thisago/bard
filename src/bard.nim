@@ -131,7 +131,7 @@ proc extractImages(node: JsonNode): seq[BardAiImage] =
       img.source.favicon = imgNode{1, 3}.getStr
       result.add img
 
-proc prompt(self: BardAi or var BardAiChat; text: string): Future[BardAiResponse] {.async.} =
+proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiResponse] {.async.} =
   ## Make a text prompt to Google Bard
   var client = newAsyncHttpClient(headers = self.headers)
   let

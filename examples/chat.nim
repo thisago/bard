@@ -1,8 +1,18 @@
+import std/asyncdispatch
+from std/os import getEnv
+
+import pkg/dotenv
+
 import pkg/bard
 
-let ai = newBard "session id"
+dotenv.load()
 
-var chat = ai.newChat
+let ai = waitFor newBardAi(
+  psid = getEnv("bard_psid"),
+  psidts = getEnv("bard_psidts")
+)
 
-discard chat.prompt "my name is Luke"
-echo chat.prompt "what's my name?"
+var chat = ai.newBardAiChat
+
+discard waitFor chat.prompt "my name is Luke"
+echo waitFor(chat.prompt "what's my name?").text
