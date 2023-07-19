@@ -1,6 +1,6 @@
 import std/asyncdispatch
 from std/httpclient import newAsyncHttpClient, newHttpHeaders, postContent, close,
-                            HttpHeaders, getContent
+                            HttpHeaders, getContent, HttpRequestError
 from std/strformat import fmt
 from std/strutils import split
 from std/json import `$`, `%*`, newJNull, parseJson, `{}`, len, getStr, JsonNode,
@@ -40,12 +40,21 @@ using
   self: BardAi
   chat: BardAiChat
 
+type
+  BardCantGetSnlm0e = object of CatchableError
+    ## Cannot get Google Bard page code
+  BardUnrecognizedResp = object of CatchableError
+    ## Google Bard sent an unrecognizable response, maybe they changed the data
+    ## structure
+  BardExpiredSession = object of CatchableError
+    ## Your Google account session was expired
+
 proc getSNlM0e(self) {.async.} =
   ## Gets the `SNlM0e` value from Google Bard webpage
   let client = newAsyncHttpClient(headers = self.headers)
   self.snlm0e = (await client.getContent baseUrl).between("SNlM0e\":\"", "\"")
   if self.snlm0e.len == 0:
-    raise newException(Exception, "Cannot GET Google Bard `SNlM0e`")
+    raise newException(BardCantGetSnlm0e, "Cannot GET Google Bard `SNlM0e`")
 
 func nextReqId(self): int =
   const sum = 100000
@@ -114,7 +123,7 @@ proc buildUrl(self: BardAi or var BardAiChat): Uri =
 proc getRespJson(resp: string): JsonNode =
   let json = resp.split("\n")[2].parseJson{0}{2}
   if json.isNil:
-    raise newException(Exception,
+    raise newException(BardUnrecognizedResp,
       fmt"Google Bard sent an unrecognizable response: `{resp}`")
   result = json.getStr.parseJson
 
@@ -134,12 +143,15 @@ proc extractImages(node: JsonNode): seq[BardAiImage] =
 proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiResponse] {.async.} =
   ## Make a text prompt to Google Bard
   var client = newAsyncHttpClient(headers = self.headers)
-  let
+  var resp: JsonNode
+  try:
     resp = getRespJson await client.postContent(
       self.buildUrl,
       self.buildQuery text
     )
-    bardData = resp{4, 0}
+  except HttpRequestError:
+    raise newException(BardExpiredSession, "Your Google account session was expired")
+  let bardData = resp{4, 0}
   new result
   result.text = bardData{1, 0}.getStr
   result.images = extractImages bardData{4}

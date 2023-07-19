@@ -2,7 +2,7 @@
 
 # Bard
 
-####  Nim interface for Google Bard batchexecute API <!--<br><small>(ps: with cli :D)</small>-->
+#### Nim interface for Google Bard batchexecute API
 
 **[About](#about) - [Usage](#usage)** - [License](#license)
 
@@ -12,6 +12,9 @@
 
 Google Bard AI batchexecute implementation in Nim
 
+Take a look at [clibard](https://github.com/thisago/clibard), an example of how
+use this lib.
+
 This project was based in
 
 - [EvanZhouDev/bard-ai ↗](https://github.com/EvanZhouDev/bard-ai "Go to Github")
@@ -19,29 +22,12 @@ This project was based in
 
 ## Usage
 
-<!--
-### As CLI app
-
-**Start chat**
-
-```bash
-$ bard chat
-```
-
-**Single question**
-
-```bash
-$ bard prompt Tell me an Asian traditional history in ten words
-```
-
-### As library -->
-
 **[Individual prompts example](examples/single.nim)**
 
 ```nim
 let ai = waitFor newBardAi(
-  psid = getEnv("bard_psid"),
-  psidts = getEnv("bard_psidts")
+  psid = "__Session-1PSID cookie",
+  psidts = "__Session-1PSIDTS cookie"
 )
 
 echo waitFor(ai.prompt "Tell me an Asian traditional history in ten words").text

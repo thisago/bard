@@ -1,8 +1,8 @@
 # Package
 
-version       = "0.2.1"
+version       = "0.3.0"
 author        = "Thiago Navarro"
-description   = " Nim interface for Google Bard batchexecute API "
+description   = "Nim interface for Google Bard batchexecute API"
 license       = "MIT"
 srcDir        = "src"
 
@@ -10,4 +10,5 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 1.6.0"
+
 requires "util"
