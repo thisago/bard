@@ -41,12 +41,12 @@ using
   chat: BardAiChat
 
 type
-  BardCantGetSnlm0e = object of CatchableError
+  BardCantGetSnlm0e* = object of CatchableError
     ## Cannot get Google Bard page code
-  BardUnrecognizedResp = object of CatchableError
+  BardUnrecognizedResp* = object of CatchableError
     ## Google Bard sent an unrecognizable response, maybe they changed the data
     ## structure
-  BardExpiredSession = object of CatchableError
+  BardExpiredSession* = object of CatchableError
     ## Your Google account session was expired
 
 proc getSNlM0e(self) {.async.} =
