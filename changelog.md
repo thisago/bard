@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.5.0 (2023/07/20)
+
+- Exported `BardAiChat.ai`
+
 ## Version 0.4.0 (2023/07/18)
 
 - Added images in text result

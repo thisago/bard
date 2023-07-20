@@ -19,7 +19,7 @@ type
     snlm0e: string
     reqId: int
   BardAiChat* = ref object
-    ai: BardAi
+    ai*: BardAi
     conversationId: string
     responseId: string
     choiceId: string
