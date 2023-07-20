@@ -1,5 +1,5 @@
 <div align=center>
-<img alt="Google Bard Logo" src="https://www.gstatic.com/lamda/images/sparkle_resting_v2_1ff6f6a71f2d298b1a31.gif">
+<img alt="Google Bard Logo" src="https://camo.githubusercontent.com/431be2a7b9847dc9f4f08f1cc8a4b338874390b786512f9126bb9becc141c397/68747470733a2f2f7777772e677374617469632e636f6d2f6c616d64612f696d616765732f737061726b6c655f72657374696e675f76325f31666636663661373166326432393862316133312e676966">
 
 # Bard
 
