@@ -2,9 +2,9 @@ import std/asyncdispatch
 from std/httpclient import newAsyncHttpClient, newHttpHeaders, postContent, close,
                             HttpHeaders, getContent, HttpRequestError
 from std/strformat import fmt
-from std/strutils import split
+from std/strutils import split, replace
 from std/json import `$`, `%*`, newJNull, parseJson, `{}`, len, getStr, JsonNode,
-                      items, JNull
+                      items, JNull, JsonParsingError
 from std/uri import `$`, encodeQuery, Uri
 
 from pkg/util/forStr import between
@@ -88,7 +88,7 @@ template headers(chat): BardAi.headers = chat.ai.headers
 template reqId(chat): BardAi.reqId = chat.ai.reqId
 template snlm0e(chat): BardAi.snlm0e = chat.ai.snlm0e
 
-proc buildQuery(self: BardAi or var BardAiChat; prompt: string): string =
+func buildQuery(self: BardAi or var BardAiChat; prompt: string): string =
   ## Creates the Bard's batchexecute query body
   when self is BardAi:
     let ids = newJNull()
@@ -110,7 +110,7 @@ proc buildQuery(self: BardAi or var BardAiChat; prompt: string): string =
     "at": self.snlm0e
   }
 
-proc buildUrl(self: BardAi or var BardAiChat): Uri =
+func buildUrl(self: BardAi or var BardAiChat): Uri =
   ## Creates the Bard's batchexecute URL
   result.path = "/_/BardChatUi/data/assistant.lamda.BardFrontendService/StreamGenerate"
   result.hostname = hostUrl
@@ -127,18 +127,24 @@ proc getRespJson(resp: string): JsonNode =
       fmt"Google Bard sent an unrecognizable response: `{resp}`")
   result = json.getStr.parseJson
 
-proc extractImages(node: JsonNode): seq[BardAiImage] =
+func extractImages(node: JsonNode): seq[BardAiImage] =
   ## Extracts all images of JSON Bard response
   if node.kind != JNull:
     for imgNode in node:
       var img = new BardAiImage
       img.tag = imgNode{2}.getStr
       img.url = imgNode{3, 0, 0}.getStr
+      new img.source
       img.source.original = imgNode{0, 0, 0}.getStr
       img.source.website = imgNode{1, 0, 0}.getStr
       img.source.name = imgNode{1, 1}.getStr
       img.source.favicon = imgNode{1, 3}.getStr
       result.add img
+
+func applyImages(text: string; images: seq[BardAiImage]): string =
+  result = text
+  for image in images:
+    result = result.replace(image.tag, fmt"!{image.tag}({image.url})")
 
 proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiResponse] {.async.} =
   ## Make a text prompt to Google Bard
@@ -149,12 +155,12 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
       self.buildUrl,
       self.buildQuery text
     )
-  except HttpRequestError:
+  except HttpRequestError, JsonParsingError: # `HttpRequestError` is useless?
     raise newException(BardExpiredSession, "Your Google account session was expired")
   let bardData = resp{4, 0}
   new result
-  result.text = bardData{1, 0}.getStr
   result.images = extractImages bardData{4}
+  result.text = bardData{1, 0}.getStr.applyImages result.images
 
   when self is BardAiChat:
     self.conversationId = resp{1}{0}.getStr
