@@ -121,11 +121,15 @@ func buildUrl(self: BardAi or var BardAiChat): Uri =
   })
 
 proc getRespJson(resp: string): JsonNode =
-  let json = resp.split("\n")[2].parseJson{0}{2}
-  if json.isNil:
-    raise newException(BardUnrecognizedResp,
-      fmt"Google Bard sent an unrecognizable response: `{resp}`")
-  result = json.getStr.parseJson
+  try:
+    let json = resp.split("\n")[2].parseJson{0}{2}
+    if not json.isNil:
+      return json.getStr.parseJson
+    
+  except JsonParsingError:
+    discard
+  raise newException(BardUnrecognizedResp,
+    fmt"Google Bard sent an unrecognizable response: `{resp}`")
 
 func extractImages(node: JsonNode): seq[BardAiImage] =
   ## Extracts all images of JSON Bard response
@@ -155,7 +159,8 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
       self.buildUrl,
       self.buildQuery text
     )
-  except HttpRequestError, JsonParsingError: # `HttpRequestError` is useless?
+  except HttpRequestError:
+    echo getCurrentExceptionMsg()
     raise newException(BardExpiredSession, "Your Google account session was expired")
   let bardData = resp{4, 0}
   new result
@@ -168,13 +173,12 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
     self.choiceId = resp{4}{0}{0}.getStr
 
 when isMainModule:
-  let ai = waitFor newBardAi(
-    psid = "",
-    psidts = "" 
+  let ai =  BardAi(
+    headers: newHttpHeaders(),
+    snlm0e: "",
+    reqId: 10000
   )
-  echo ai.snlm0e
   var chat = ai.newBardAiChat
   # echo waitFor ai.prompt "Tell me an Asian traditional history in ten words"
   echo waitFor(chat.prompt "my name is jeff")[]
-  echo waitFor(chat.prompt "What's my name?")[]
   

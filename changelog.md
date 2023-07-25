@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.6.0 (2023/07/25)
+
+- Added correct error handling for unrecognizable data and expired session
+
 ## Version 0.5.0 (2023/07/20)
 
 - Exported `BardAiChat.ai`
