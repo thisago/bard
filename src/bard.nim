@@ -74,6 +74,10 @@ proc newBardAi*(psid, psidts: string): Future[BardAi] {.async.} =
     "Origin": baseUrl,
     "Referer": baseUrl & "/",
     "Cookie": fmt"__Secure-1PSID={psid}; __Secure-1PSIDTS={psidts}",
+    # "Sec-Fetch-Dest": "empty",
+    # "Sec-Fetch-Mode": "cors",
+    # "Sec-Fetch-Site": "same-origin",
+    # "Sec-GPC": "1",
   })
   result.reqId = nextReqId result
   await result.getSNlM0e
@@ -173,12 +177,10 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
     self.choiceId = resp{4}{0}{0}.getStr
 
 when isMainModule:
-  let ai =  BardAi(
-    headers: newHttpHeaders(),
-    snlm0e: "",
-    reqId: 10000
+  let ai = waitFor newBardAi(
+    psid: "",
+    psidts: ""
   )
   var chat = ai.newBardAiChat
   # echo waitFor ai.prompt "Tell me an Asian traditional history in ten words"
   echo waitFor(chat.prompt "my name is jeff")[]
-  

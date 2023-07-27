@@ -23,6 +23,9 @@ This project was based in
 
 ## Usage
 
+> **Note**
+> *Google Bard allows up to 200 requests per hour, if it exceeds, it will returns HTTP 429 error code.* - *Source: Google Bard*
+
 **[Individual prompts example](examples/single.nim)**
 
 ```nim
