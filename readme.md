@@ -5,7 +5,7 @@
 
 #### Nim interface for Google Bard batchexecute API
 
-**[About](#about) - [Usage](#usage)** - [License](#license)
+**[About](#about) - [Usage](#usage) - [FAQ](#faq)** - [License](#license)
 
 </div>
 
@@ -89,6 +89,8 @@ Your name is Luke. You told me that in your previous response.
 
 ## What is "Google Bard sent an unrecognizable response" error?
 
+**It's generally rate limit.**
+
 <details>
   <summary>View error example</summary>
 
@@ -99,9 +101,6 @@ Your name is Luke. You told me that in your previous response.
    [BardUnrecognizedResp]
   ```
 </details>
-
-**It's generally rate limit.**
-
 
 ## License
 
