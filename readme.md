@@ -85,6 +85,24 @@ Your name is Luke. You told me that in your previous response.
 
 </details>
 
+## FAQ
+
+## What is "Google Bard sent an unrecognizable response" error?
+
+<details>
+  <summary>View error example</summary>
+
+  ```
+  Exception message: Google Bard sent an unrecognizable response: `)]}'
+
+  [["wrb.fr",null,null,null,null,[8]],["di",69],["af.httprm",69,"3783202389886124604",21]]`
+   [BardUnrecognizedResp]
+  ```
+</details>
+
+**It's generally rate limit.**
+
+
 ## License
 
 This library is FOSS, licensed over MIT license.
