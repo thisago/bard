@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.7.0 (2023/08/14)
+
+- Added draft extraction
+- Added related searches extraction
+- Added custom cookie support
+
 ## Version 0.6.0 (2023/07/25)
 
 - Added correct error handling for unrecognizable data and expired session

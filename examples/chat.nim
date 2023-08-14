@@ -7,10 +7,7 @@ import pkg/bard
 
 dotenv.load()
 
-let ai = waitFor newBardAi(
-  psid = getEnv("bard_psid"),
-  psidts = getEnv("bard_psidts")
-)
+let ai = waitFor newBardAi getEnv "bard_cookies"
 
 var chat = ai.newBardAiChat
 

@@ -13,26 +13,24 @@
 
 Google Bard AI batchexecute implementation in Nim
 
-Take a look at [clibard](https://github.com/thisago/clibard), an example of how
-use this lib.
+Take a look at [clibard](https://github.com/thisago/clibard), to learn more
+about the use of this lib.
 
 This project was based in
 
 - [EvanZhouDev/bard-ai ↗](https://github.com/EvanZhouDev/bard-ai "Go to Github")
 - [acheong08/Bard ↗](https://github.com/acheong08/Bard "Go to Github")
+- [dsdanielpark/Bard-API ↗](https://github.com/dsdanielpark/Bard-API "Go to Github")
 
 ## Usage
 
 > **Note**
-> *Google Bard allows up to 200 requests per hour, if it exceeds, it will returns HTTP 429 error code.* - Source: Google Bard
+> *Google Bard allows up to 200 requests per hour.* - Source: Google Bard
 
 **[Individual prompts example](examples/single.nim)**
 
 ```nim
-let ai = waitFor newBardAi(
-  psid = "__Session-1PSID cookie",
-  psidts = "__Session-1PSIDTS cookie"
-)
+let ai = waitFor newBardAi "google session cookies"
 
 echo waitFor(ai.prompt "Tell me an Asian traditional history in ten words").text
 ```
@@ -65,10 +63,7 @@ These are just a few examples of the many ways to summarize Asian traditional hi
 **[Chat example](examples/chat.nim)**
 
 ```nim
-let ai = waitFor newBardAi(
-  psid = getEnv("bard_psid"),
-  psidts = getEnv("bard_psidts")
-)
+let ai = waitFor newBardAi "google session cookies"
 
 var chat = ai.newBardAiChat
 
