@@ -31,7 +31,7 @@ type
     text*: string
     images*: seq[BardAiImage]
     drafts*: seq[BardAiResponseDraft]
-    relatedSearches*: seq[string] ## "Google it" button
+    relatedSearches*: seq[string] ##z< "Google it" button
   BardAiResponseDraft* = tuple
     id, text: string
   BardAiImage* = ref object
@@ -93,6 +93,15 @@ proc newBardAi*(cookies: string; server = bardServers[0]): Future[BardAi] {.asyn
   result.server = server
   result.reqId = nextReqId result
   await result.getSNlM0e
+
+proc newBardAi*(cookies: openArray[(string, string)]; server = bardServers[0]): Future[BardAi] =
+  ## Alias that transforms cookies to string
+  newBardAi(
+    collect(for cookie in cookies: cookie[0] & "=" & cookie[1]).join ";",
+    server
+  )
+  
+  
   
 proc newBardAiChat*(self): BardAiChat =
   ## Creates new Bard AI Chat object

@@ -5,6 +5,7 @@
 - Added draft extraction
 - Added related searches extraction
 - Added custom cookie support
+- Added BardAi constructor alias to receive cookies in tuple array instead of string
 
 ## Version 0.6.0 (2023/07/25)
 

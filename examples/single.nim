@@ -7,6 +7,9 @@ import pkg/bard
 
 dotenv.load()
 
-let ai = waitFor newBardAi getEnv "bard_cookies"
+let ai = waitFor newBardAi({
+  "__Secure-1PSID": getEnv("bard_psid"),
+  "__Secure-1PSIDTS": getEnv("bard_psidts")
+})
 
 echo waitFor(ai.prompt "Tell me an Asian traditional history in ten words").text

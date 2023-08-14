@@ -30,7 +30,10 @@ This project was based in
 **[Individual prompts example](examples/single.nim)**
 
 ```nim
-let ai = waitFor newBardAi "google session cookies"
+let ai = waitFor newBardAi({
+  "__Secure-1PSID": "Google session PSID"
+  "__Secure-1PSIDTS": "Google session PSIDTS"
+})
 
 echo waitFor(ai.prompt "Tell me an Asian traditional history in ten words").text
 ```
@@ -63,7 +66,10 @@ These are just a few examples of the many ways to summarize Asian traditional hi
 **[Chat example](examples/chat.nim)**
 
 ```nim
-let ai = waitFor newBardAi "google session cookies"
+let ai = waitFor newBardAi({
+  "__Secure-1PSID": "Google session PSID"
+  "__Secure-1PSIDTS": "Google session PSIDTS"
+})
 
 var chat = ai.newBardAiChat
 
