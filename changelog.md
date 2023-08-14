@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.8.0 (2023/08/14)
+
+- Added Bard model name (`bl`) extraction
+
 ## Version 0.7.0 (2023/08/14)
 
 - Added draft extraction

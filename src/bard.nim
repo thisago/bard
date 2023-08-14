@@ -20,6 +20,7 @@ type
   BardAi* = ref object
     headers: HttpHeaders
     snlm0e: string
+    cfb2h: string ## `cl` param; The Bard model
     reqId: int
     server: string
   BardAiChat* = ref object
@@ -50,19 +51,31 @@ using
 
 type
   BardCantGetSnlm0e* = object of CatchableError
-    ## Cannot get Google Bard page code
+    ## Cannot get Google Bard `SNlM0e` param from HTML
+  BardCantGetCfb2h* = object of CatchableError
+    ## Cannot get Google Bard `cfb2h` param from HTML
   BardUnrecognizedResp* = object of CatchableError
     ## Google Bard sent an unrecognizable response, maybe they changed the data
     ## structure
   BardExpiredSession* = object of CatchableError
     ## Your Google account session was expired
 
-proc getSNlM0e(self) {.async.} =
-  ## Gets the `SNlM0e` value from Google Bard webpage
-  let client = newAsyncHttpClient(headers = self.headers)
-  self.snlm0e = (await client.getContent baseUrl).between("SNlM0e\":\"", "\"")
+proc getBardParams(self) {.async.} =
+  ## Gets the `SNlM0e` and `cfb2h` from Google Bard webpage
+  try:
+    let
+      client = newAsyncHttpClient(headers = self.headers)
+      html = await client.getContent baseUrl
+      params = html.between("window.WIZ_global_data", "};")
+
+    self.snlm0e = params.between("SNlM0e\":\"", "\"")
+    self.cfb2h = params.between("cfb2h\":\"", "\"")
+  except HttpRequestError:
+    discard
   if self.snlm0e.len == 0:
     raise newException(BardCantGetSnlm0e, "Cannot GET Google Bard `SNlM0e`")
+  if self.cfb2h.len == 0:
+    raise newException(BardCantGetCfb2h, "Cannot GET Google Bard `cfb2h`")
 
 func nextReqId(self): int =
   const sum = 100000
@@ -71,12 +84,7 @@ func nextReqId(self): int =
   else:
     self.reqId + sum
 
-const bardServers* = [
-  "boq_assistant-bard-web-server_20230419.00_p1",
-  "boq_assistant-bard-web-server_20230711.08_p0",
-]
-
-proc newBardAi*(cookies: string; server = bardServers[0]): Future[BardAi] {.async.} =
+proc newBardAi*(cookies: string): Future[BardAi] {.async.} =
   ## Creates new Bard AI object
   ## 
   ## Required cookies: `__Secure-1PSID` and `__Secure-1PSIDTS`
@@ -90,18 +98,12 @@ proc newBardAi*(cookies: string; server = bardServers[0]): Future[BardAi] {.asyn
     "Referer": baseUrl & "/",
     "Cookie": cookies
   })
-  result.server = server
   result.reqId = nextReqId result
-  await result.getSNlM0e
+  await getBardParams result
 
-proc newBardAi*(cookies: openArray[(string, string)]; server = bardServers[0]): Future[BardAi] =
+proc newBardAi*(cookies: openArray[(string, string)]): Future[BardAi] =
   ## Alias that transforms cookies to string
-  newBardAi(
-    collect(for cookie in cookies: cookie[0] & "=" & cookie[1]).join ";",
-    server
-  )
-  
-  
+  newBardAi collect(for cookie in cookies: cookie[0] & "=" & cookie[1]).join ";"
   
 proc newBardAiChat*(self): BardAiChat =
   ## Creates new Bard AI Chat object
@@ -112,7 +114,7 @@ proc newBardAiChat*(self): BardAiChat =
 template headers(chat): BardAi.headers = chat.ai.headers
 template reqId(chat): BardAi.reqId = chat.ai.reqId
 template snlm0e(chat): BardAi.snlm0e = chat.ai.snlm0e
-template server(chat): BardAi.server = chat.ai.server
+template cfb2h(chat): BardAi.cfb2h = chat.ai.cfb2h
 
 func buildQuery(self: BardAi or var BardAiChat; prompt: string): string =
   ## Creates the Bard's batchexecute query body
@@ -142,7 +144,7 @@ func buildUrl(self: BardAi or var BardAiChat): Uri =
   result.hostname = hostUrl
   result.scheme = "https"
   result.query = encodeQuery({
-    "bl": self.server,
+    "bl": self.cfb2h,
     "_reqID": $self.reqId,
   })
 
@@ -185,8 +187,7 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
       self.buildQuery text
     )
   except HttpRequestError:
-    echo getCurrentExceptionMsg()
-    raise newException(BardExpiredSession, "Your Google account session was expired")
+    raise newException(BardExpiredSession, "Your Google account session was expired: " & getCurrentExceptionMsg())
   let bardData = resp{4, 0}
   
   new result
@@ -208,7 +209,8 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
     self.choiceId = resp{4}{0}{0}.getStr
 
 when isMainModule:
-  let ai = waitFor newBardAi("__Secure-1PSIDTS=sidts-CjEBSAxbGT-Wp1R1dKZoAfEdCPDi4tRLF0ITxS7KH6gWK1XAOB2_5xz0XL5zHIPBhwG5EAA; __Secure-1PSID=ZwjrVdNd2_lQO0-AseXdwV-CpwuumXtwHhWHiyyRWWi4xtaOdXVU_grpOx4DLpAkNy_nJw.")
+  let ai = waitFor newBardAi("COOKIES")
+
   var chat = ai.newBardAiChat
   # echo waitFor ai.prompt "Tell me an Asian traditional history in ten words"
   echo waitFor(chat.prompt "my name is jeff")[]
