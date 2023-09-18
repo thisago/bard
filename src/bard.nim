@@ -86,7 +86,7 @@ func nextReqId(self): int =
 
 proc newBardAi*(cookies: string): Future[BardAi] {.async.} =
   ## Creates new Bard AI object
-  ## 
+  ##
   ## Required cookies: `__Secure-1PSID` and `__Secure-1PSIDTS`
   new result
   result.headers = newHttpHeaders({
@@ -104,7 +104,7 @@ proc newBardAi*(cookies: string): Future[BardAi] {.async.} =
 proc newBardAi*(cookies: openArray[(string, string)]): Future[BardAi] =
   ## Alias that transforms cookies to string
   newBardAi collect(for cookie in cookies: cookie[0] & "=" & cookie[1]).join ";"
-  
+
 proc newBardAiChat*(self): BardAiChat =
   ## Creates new Bard AI Chat object
   new result
@@ -177,7 +177,10 @@ func applyImages(text: string; images: seq[BardAiImage]): string =
   for image in images:
     result = result.replace(image.tag, fmt"!{image.tag}({image.url})")
 
-proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiResponse] {.async.} =
+proc prompt*(
+  self: BardAi or var BardAiChat;
+  text: string
+): Future[BardAiResponse] {.async.} =
   ## Make a text prompt to Google Bard
   var client = newAsyncHttpClient(headers = self.headers)
   var resp: JsonNode
@@ -187,9 +190,10 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
       self.buildQuery text
     )
   except HttpRequestError:
-    raise newException(BardExpiredSession, "Your Google account session was expired: " & getCurrentExceptionMsg())
+    raise newException(BardExpiredSession,
+        "Your Google account session was expired: " & getCurrentExceptionMsg())
   let bardData = resp{4, 0}
-  
+
   new result
   result.images = extractImages bardData{4}
   result.text = bardData{1, 0}.getStr.applyImages result.images
@@ -199,7 +203,7 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
       id: draft{0}.getStr,
       text: collect(for txt in draft{1}: getStr txt).join "\l"
     )
-  
+
   for suggestion in resp{2}:
     result.relatedSearches.add getStr suggestion{0}
 
@@ -209,8 +213,8 @@ proc prompt*(self: BardAi or var BardAiChat; text: string): Future[BardAiRespons
     self.choiceId = resp{4}{0}{0}.getStr
 
 when isMainModule:
-  let ai = waitFor newBardAi("COOKIES")
+  let ai = waitFor newBardAi("")
 
   var chat = ai.newBardAiChat
   # echo waitFor ai.prompt "Tell me an Asian traditional history in ten words"
-  echo waitFor(chat.prompt "my name is jeff")[]
+  echo waitFor(chat.prompt "tell me 2 jokes")[]
